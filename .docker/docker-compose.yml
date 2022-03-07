@@ -1,0 +1,51 @@
+version: "3"
+
+services:
+  database:
+    build: ./conf/mysql
+    hostname: mysql8
+    container_name: ul_mysql8
+    restart: unless-stopped
+    environment:
+      MYSQL_USER: "analista"
+      MYSQL_PASSWORD: "analista123"
+      MYSQL_ROOT_PASSWORD: "analista123"
+    ports:
+      - "3316:3306"
+    expose:
+      - "3316"
+    volumes:
+      - ./mysql:/var/lib/mysql
+      - ./conf/mysql/my.cnf:/etc/mysql/conf.d/my.cnf
+    command: mysqld --sql_mode="NO_ENGINE_SUBSTITUTION" --character-set-server=utf8 --init-connect='SET NAMES UTF8;' --innodb-flush-log-at-trx-commit=0 --default-authentication-plugin=mysql_native_password
+    networks:
+      uplexis:
+        aliases:
+          - mysql8
+  php:
+    build: ./conf/php
+    hostname: php8
+    container_name: ul_php8
+    restart: unless-stopped
+    depends_on:
+      - database
+    volumes:
+      - ./../:/var/www/html/
+      - ./conf/php:/usr/local/etc/php
+    environment:
+      XDEBUG_ENABLED: 1
+      XDEBUG_REMOTE_AUTOSTART: 1
+      XDEBUG_MAXNESTING_LEVEL: 1000
+      XDEBUG_REMOTE_CONNECT_BACK: 1
+      XDEBUG_REMOTE_HOST: host.docker.internal
+      PHP_IDE_CONFIG: serverName=localhost
+    ports:
+      - "8010:80"
+    networks:
+      uplexis:
+        aliases:
+          - php8
+
+networks:
+  uplexis:
+    driver: bridge
